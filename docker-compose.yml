@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: biblioteca-db
+    environment:
+      POSTGRES_DB: biblioteca
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d biblioteca"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    image: ${DOCKERHUB_USER:-mxrcos}/biblioteca-api:latest
+    container_name: biblioteca-api
+    environment:
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=biblioteca;Username=postgres;Password=postgres"
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
